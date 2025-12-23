@@ -1,0 +1,226 @@
+import axios from 'axios';
+import { EventSourcingResult, EventTimeline, EventStatistics } from '../types';
+
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3000';
+
+const api = axios.create({
+  baseURL: API_BASE_URL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  timeout: 10000, // 10 second timeout
+});
+
+// Add auth token to requests
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('authToken');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+// Handle auth errors and network issues
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      localStorage.removeItem('authToken');
+      // Don't redirect in development to avoid breaking the app
+      if (process.env.NODE_ENV === 'production') {
+        window.location.href = '/login';
+      }
+    }
+    
+    // Handle network errors gracefully
+    if (!error.response) {
+      console.warn('Network error:', error.message);
+      return Promise.reject(new Error('Network error - please check your connection'));
+    }
+    
+    return Promise.reject(error);
+  }
+);
+
+export const authApi = {
+  login: async (email: string, password: string) => {
+    try {
+      const response = await api.post('/user/signin', { email, password });
+      return response.data;
+    } catch (error) {
+      console.error('Login error:', error);
+      throw error;
+    }
+  },
+  
+  register: async (userData: any) => {
+    try {
+      const response = await api.post('/user/create', userData);
+      return response.data;
+    } catch (error) {
+      console.error('Registration error:', error);
+      throw error;
+    }
+  },
+};
+
+export const eventSourcingApi = {
+  // General event sourcing endpoints
+  replayEvents: async (entityId: string, options?: any): Promise<EventSourcingResult> => {
+    try {
+      console.log('Making replay request to:', `/events/${entityId}/replay`, 'with options:', options);
+      const response = await api.get(`/events/${entityId}/replay`, { params: options });
+      console.log('Replay response:', response.data);
+      return response.data?.data || response.data;
+    } catch (error) {
+      console.error('Replay events error:', error);
+      console.error('Error details:', (error as any)?.response?.data);
+      throw error;
+    }
+  },
+
+  getStateAtTime: async (entityId: string, timestamp: string): Promise<EventSourcingResult> => {
+    try {
+      const response = await api.get(`/events/${entityId}/state-at/${timestamp}`);
+      return response.data?.data || response.data;
+    } catch (error) {
+      console.error('Get state at time error:', error);
+      throw error;
+    }
+  },
+
+  getStateAfterEvents: async (entityId: string, eventCount: number): Promise<EventSourcingResult> => {
+    try {
+      const response = await api.get(`/events/${entityId}/state-after/${eventCount}`);
+      return response.data?.data || response.data;
+    } catch (error) {
+      console.error('Get state after events error:', error);
+      throw error;
+    }
+  },
+
+  getEventTimeline: async (entityId: string): Promise<EventTimeline> => {
+    try {
+      const response = await api.get(`/events/${entityId}/timeline`);
+      return response.data?.data || response.data;
+    } catch (error) {
+      console.error('Get event timeline error:', error);
+      throw error;
+    }
+  },
+
+  compareStates: async (entityId: string, fromDate: string, toDate: string) => {
+    try {
+      console.log('Making compare request to:', `/events/${entityId}/compare`, 'with params:', { fromDate, toDate });
+      const response = await api.get(`/events/${entityId}/compare`, {
+        params: { fromDate, toDate }
+      });
+      console.log('Compare response:', response.data);
+      return response.data?.data || response.data;
+    } catch (error) {
+      console.error('Compare states error:', error);
+      console.error('Error details:', (error as any)?.response?.data);
+      throw error;
+    }
+  },
+
+  getEventStatistics: async (entityId: string): Promise<EventStatistics> => {
+    try {
+      const response = await api.get(`/events/${entityId}/statistics`);
+      return response.data?.data || response.data;
+    } catch (error) {
+      console.error('Get event statistics error:', error);
+      throw error;
+    }
+  },
+
+  getEntityEvents: async (entityId: string, eventTypes?: string[]) => {
+    try {
+      const response = await api.get(`/events/${entityId}/events`, {
+        params: eventTypes ? { eventTypes: eventTypes.join(',') } : {}
+      });
+      return response.data?.data || response.data;
+    } catch (error) {
+      console.error('Get entity events error:', error);
+      throw error;
+    }
+  },
+
+  getStreamBatch: async (entityId: string, batchNumber: number, batchSize: number = 50) => {
+    try {
+      const response = await api.get(`/events/${entityId}/stream/${batchNumber}`, {
+        params: { batchSize }
+      });
+      return response.data?.data || response.data;
+    } catch (error) {
+      console.error('Get stream batch error:', error);
+      throw error;
+    }
+  },
+};
+
+export const usersApi = {
+  getAllUsers: async () => {
+    try {
+      console.log('Fetching all users...');
+      const response = await api.get('/users/all');
+      console.log('Users response:', response.data);
+      return response.data?.data || response.data || [];
+    } catch (error) {
+      console.error('Get all users error:', error);
+      console.error('Error response:', (error as any)?.response?.data);
+      console.error('Error status:', (error as any)?.response?.status);
+      // Return empty array as fallback to prevent crashes
+      return [];
+    }
+  },
+
+  getCurrentUser: async () => {
+    try {
+      const response = await api.get('/users/me');
+      return response.data?.data || response.data;
+    } catch (error) {
+      console.error('Get current user error:', error);
+      throw error;
+    }
+  },
+
+  getUsersByRole: async (role: string) => {
+    try {
+      const response = await api.get(`/users/${role}`);
+      return response.data?.data || response.data || [];
+    } catch (error) {
+      console.error('Get users by role error:', error);
+      return [];
+    }
+  },
+
+  updateUser: async (userData: any) => {
+    try {
+      const response = await api.put('/user/update', userData);
+      return response.data?.data || response.data;
+    } catch (error) {
+      console.error('Update user error:', error);
+      throw error;
+    }
+  },
+};
+
+export const healthApi = {
+  getHealth: async () => {
+    try {
+      const response = await api.get('/health');
+      return response.data?.data || response.data;
+    } catch (error) {
+      console.error('Get health error:', error);
+      // Return default health status to prevent crashes
+      return {
+        status: 'unknown',
+        timestamp: new Date().toISOString(),
+        uptime: 0,
+      };
+    }
+  },
+};
+
+export default api;
