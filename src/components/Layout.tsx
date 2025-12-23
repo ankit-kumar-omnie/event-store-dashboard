@@ -18,6 +18,8 @@ import {
   // GitCompare,
 } from 'lucide-react';
 import clsx from 'clsx';
+import NotificationBell from './NotificationBell';
+import NotificationPanel from './NotificationPanel';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -32,12 +34,14 @@ const navigation = [
   // { name: 'Event Replay', href: '/event-replay', icon: Play },
   // { name: 'State Comparison', href: '/state-comparison', icon: GitCompare },
   { name: 'Analytics', href: '/analytics', icon: BarChart3 },
+  { name: 'Notifications', href: '/notifications', icon: Activity },
   { name: 'Settings', href: '/settings', icon: Settings },
 ];
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [notificationPanelOpen, setNotificationPanelOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const userMenuRef = useRef<HTMLDivElement>(null);
@@ -175,6 +179,11 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 <span className="text-sm text-gray-500">Connected</span>
               </div>
               
+              {/* Notifications */}
+              <NotificationBell 
+                onNotificationClick={() => setNotificationPanelOpen(true)} 
+              />
+              
               {/* User menu */}
               <div className="relative" ref={userMenuRef}>
                 <button
@@ -217,6 +226,12 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           </div>
         </main>
       </div>
+      
+      {/* Notification Panel */}
+      <NotificationPanel 
+        isOpen={notificationPanelOpen} 
+        onClose={() => setNotificationPanelOpen(false)} 
+      />
     </div>
   );
 };

@@ -89,3 +89,33 @@ export interface StateComparison {
     details: any;
   }>;
 }
+
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Notification {
+  id: string;
+  title: string;
+  message: string;
+  type: 'info' | 'warning' | 'error' | 'success';
+  priority: 'low' | 'medium' | 'high' | 'urgent';
+  userId: string;
+  read: boolean;
+  metadata?: Record<string, any>;
+  actionUrl?: string;
+  expiresAt?: string;
+  createdAt: string;
+  readAt?: string;
+}
+
+export interface NotificationsResponse {
+  notifications: Notification[];
+  total: number;
+  unreadCount: number;
+}

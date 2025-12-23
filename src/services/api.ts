@@ -223,4 +223,71 @@ export const healthApi = {
   },
 };
 
+export const notificationsApi = {
+  getNotifications: async (page: number = 1, limit: number = 20, unreadOnly: boolean = false) => {
+    try {
+      const response = await api.get('/notifications', {
+        params: { page, limit, unreadOnly }
+      });
+      return response.data?.data || response.data;
+    } catch (error) {
+      console.error('Get notifications error:', error);
+      return { notifications: [], total: 0, unreadCount: 0 };
+    }
+  },
+
+  getUnreadCount: async () => {
+    try {
+      const response = await api.get('/notifications/unread-count');
+      return response.data?.data || response.data;
+    } catch (error) {
+      console.error('Get unread count error:', error);
+      return { unreadCount: 0 };
+    }
+  },
+
+  markAsRead: async (notificationId: string) => {
+    try {
+      const response = await api.put(`/notifications/${notificationId}/read`);
+      return response.data?.data || response.data;
+    } catch (error) {
+      console.error('Mark as read error:', error);
+      throw error;
+    }
+  },
+
+  markAllAsRead: async () => {
+    try {
+      const response = await api.put('/notifications/mark-all-read');
+      return response.data?.data || response.data;
+    } catch (error) {
+      console.error('Mark all as read error:', error);
+      throw error;
+    }
+  },
+
+  deleteNotification: async (notificationId: string) => {
+    try {
+      const response = await api.delete(`/notifications/${notificationId}`);
+      return response.data?.data || response.data;
+    } catch (error) {
+      console.error('Delete notification error:', error);
+      throw error;
+    }
+  },
+
+  createTestNotification: async (title?: string, message?: string) => {
+    try {
+      const response = await api.post('/notifications/test', {
+        title: title || 'Test Notification',
+        message: message || 'This is a test notification'
+      });
+      return response.data?.data || response.data;
+    } catch (error) {
+      console.error('Create test notification error:', error);
+      throw error;
+    }
+  },
+};
+
 export default api;

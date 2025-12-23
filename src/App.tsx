@@ -14,6 +14,7 @@ import EventTimeline from './pages/EventTimeline';
 import Analytics from './pages/Analytics';
 import Settings from './pages/Settings';
 import TimeTravel from './pages/TimeTravel';
+import Notifications from './pages/Notifications';
 // Temporarily disabled - Event Replay and State Comparison have React Query issues
 // import EventReplay from './pages/EventReplay';
 // import StateComparison from './pages/StateComparison';
@@ -57,6 +58,7 @@ function App() {
                     <Route path="/timeline" element={<EventTimeline />} />
                     <Route path="/analytics" element={<Analytics />} />
                     <Route path="/time-travel" element={<TimeTravel />} />
+                    <Route path="/notifications" element={<Notifications />} />
                     {/* Temporarily disabled - React Query issues */}
                     {/* <Route path="/event-replay" element={<EventReplay />} /> */}
                     {/* <Route path="/state-comparison" element={<StateComparison />} /> */}
