@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { EventSourcingResult, EventTimeline, EventStatistics } from '../types';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3000';
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3002';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -157,6 +157,33 @@ export const eventSourcingApi = {
       throw error;
     }
   },
+
+  // Get total events count across all entities
+  getTotalEventsCount: async () => {
+    try {
+      // Since there's no dedicated endpoint, we'll need to get all users and sum their events
+      // This is a workaround - ideally there should be a dedicated analytics endpoint
+      const users = await api.get('/users/all');
+      const userList = users.data?.data || users.data || [];
+      
+      let totalEvents = 0;
+      for (const user of userList) {
+        try {
+          const events = await api.get(`/events/${user.id}/events`);
+          const eventList = events.data?.data || events.data || [];
+          totalEvents += Array.isArray(eventList) ? eventList.length : 0;
+        } catch (error) {
+          // Skip users with no events or errors
+          console.warn(`Could not get events for user ${user.id}:`, error.message);
+        }
+      }
+      
+      return { totalEvents };
+    } catch (error) {
+      console.error('Get total events count error:', error);
+      return { totalEvents: 0 };
+    }
+  },
 };
 
 export const usersApi = {
@@ -170,7 +197,7 @@ export const usersApi = {
       console.error('Get all users error:', error);
       console.error('Error response:', (error as any)?.response?.data);
       console.error('Error status:', (error as any)?.response?.status);
-      // Return empty array as fallback to prevent crashes
+      // Return empty array when API fails
       return [];
     }
   },
@@ -210,15 +237,12 @@ export const healthApi = {
   getHealth: async () => {
     try {
       const response = await api.get('/health');
+      console.log('Health API response:', response.data);
+      // The response structure is { success: true, data: { status, timestamp, uptime }, timestamp }
       return response.data?.data || response.data;
     } catch (error) {
       console.error('Get health error:', error);
-      // Return default health status to prevent crashes
-      return {
-        status: 'unknown',
-        timestamp: new Date().toISOString(),
-        uptime: 0,
-      };
+      throw error;
     }
   },
 };
